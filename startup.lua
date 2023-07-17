@@ -22,12 +22,13 @@
                 slot 6~: byproducts
 
 ]]
-local TYPE_DRAWER_CONTROLLER = "some string"
-local TYPE_SOILCONTAINER = "some string_3"
-local TYPE_BOTANY_POT = "botanypots:botany_pot?"
-local TYPE_INTERFACE = "AE2_interface"
-local REPLANTATION_DELAY = 300 --seconds
-local DEPOSIT_DELAY = 30 --seconds
+local TYPE_DRAWER_CONTROLLER = "functionalstorage:storage_controller"
+local TYPE_SOILCONTAINER = TYPE_DRAWER_CONTROLLER --if item in the first slot is insanium farmland, then it is a soil container
+local SOILCONTAINER_FILTER = "mysticalagradditions:insanium_farmland"
+local TYPE_BOTANY_POT = "botanypots:botany_pot"
+local TYPE_INTERFACE = "ae2:interface"
+local REPLANTATION_DELAY = 200 --seconds
+local DEPOSIT_DELAY = 10 --seconds
 
 --table utils
 local function sortTable(tbl, index, ascending)
@@ -54,9 +55,9 @@ local function isEmpty(t)
     return next(t) == nil
 end
 
-local function zipNameHandles(type)
+local function zipNameHandles(type, filterfunc)
     --Handle is a tuple of (name, methods)
-    local names = peripheral.find(type)
+    local names = peripheral.find(type, filterfunc)
     local result = {}
     for i =1, #names do
         result[i] = {names[i], peripheral.wrap(names[i])}
@@ -118,13 +119,13 @@ end
 local function soilcontainerScan(soilcontainerhandle) --single container!!!
     --(Soil, Quantity, slot)
     local result = {}
-    local itemlist = soilcontainerhandle[2].list()
-    for slotindex, item in pairs(itemlist) do
+        local itemlist = soilcontainerhandle[2].list()
+        for slotindex, item in pairs(itemlist) do
         local toinsert = {item.name, item.count, slotindex}
-        table.insert(result, toinsert)
-        sleep(0)
+            table.insert(result, toinsert)
+            sleep(0)
+        end
     end
-end
 
 local function botanypotScan(botanypothandles)
     --(Soil, Seed, pot_name, methods)
@@ -228,10 +229,18 @@ local function deposit()
     end
 end
 
+local function soilContainerFileter(name, wrapped)
+    if wrapped.list()[1].name == SOILCONTAINER_FILTER then
+        return true
+    else
+        return false
+    end
+end
+
 local function manage()
     local botanypothandles = zipNameHandles(TYPE_BOTANY_POT)
     local controllerhandles = zipNameHandles(TYPE_DRAWER_CONTROLLER)
-    local soilcontainerhandle = zipNameHandles(TYPE_SOILCONTAINER)[1]
+    local soilcontainerhandle = zipNameHandles(TYPE_SOILCONTAINER, soilContainerFileter)[1]
     while true do --infinite loop
         local controller_scan = controllerScan(controllerhandles)
         local controller_keyed_byseed = keyTable(controller_scan, 4) --key is seed name
