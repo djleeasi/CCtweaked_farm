@@ -57,7 +57,12 @@ end
 
 local function zipNameHandles(type, filterfunc)
     --Handle is a tuple of (name, methods)
-    local names = peripheral.find(type, filterfunc)
+    local names = nil
+    if filterfunc == nil then 
+        names = peripheral.find(type)
+    else
+        names = peripheral.find(type, filterfunc)
+    end
     local result = {}
     for i =1, #names do
         result[i] = {names[i], peripheral.wrap(names[i])}
